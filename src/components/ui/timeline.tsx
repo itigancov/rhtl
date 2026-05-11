@@ -21,12 +21,16 @@ const timelineVariants = cva("flex flex-col gap-2 p-8", {
 
 const timelineIconColumnClass = "flex w-10 shrink-0 justify-center";
 
+type TimelineOrderedChildProps = {
+  orderIndex?: number;
+};
+
 function getTimelinePlacement(
   position: NonNullable<TimelineProps["position"]>,
-  orderindex?: number
+  orderIndex?: number
 ) {
-  const isEvenIndex = orderindex !== undefined && orderindex % 2 === 0;
-  const isOddIndex = orderindex !== undefined && orderindex % 2 !== 0;
+  const isEvenIndex = orderIndex !== undefined && orderIndex % 2 === 0;
+  const isOddIndex = orderIndex !== undefined && orderIndex % 2 !== 0;
 
   return {
     isTextRightAligned:
@@ -53,6 +57,58 @@ function getTimelinePlacement(
   };
 }
 
+function isTimelineIcon(
+  child: React.ReactNode
+): child is React.ReactElement<React.HTMLAttributes<HTMLDivElement>> {
+  return React.isValidElement(child) && child.type === TimelineIcon;
+}
+
+function cloneWithTimelineOrder(child: React.ReactNode, orderIndex: number) {
+  if (!React.isValidElement(child)) {
+    return child;
+  }
+
+  return React.cloneElement(
+    child as React.ReactElement<TimelineOrderedChildProps>,
+    {
+      orderIndex
+    }
+  );
+}
+
+function renderTimelineItems(children: React.ReactNode) {
+  return React.Children.map(children, (child, index) =>
+    cloneWithTimelineOrder(child, index + 1)
+  );
+}
+
+function renderTimelineItemChildren(
+  children: React.ReactNode,
+  orderIndex?: number
+) {
+  return React.Children.map(children, (child) => {
+    if (!React.isValidElement(child) || orderIndex === undefined) {
+      return child;
+    }
+
+    return cloneWithTimelineOrder(child, orderIndex);
+  });
+}
+
+function getTimelineHeaderSlots(children: React.ReactNode) {
+  const childArray = React.Children.toArray(children);
+
+  return {
+    icon: childArray.find(isTimelineIcon),
+    content: childArray.filter(
+      (child) =>
+        React.isValidElement(child) &&
+        !isTimelineIcon(child) &&
+        child.props.children
+    )
+  };
+}
+
 export interface TimelineProps
   extends React.HTMLAttributes<HTMLDivElement>,
     VariantProps<typeof timelineVariants> {}
@@ -70,13 +126,7 @@ const Timeline = React.forwardRef<HTMLDivElement, TimelineProps>(
           )}
           {...props}
         >
-          {React.Children.map(children, (child, index) => {
-            if (React.isValidElement(child)) {
-              return React.cloneElement(child, {
-                orderIndex: index + 1
-              } as React.HTMLAttributes<HTMLElement>);
-            }
-          })}
+          {renderTimelineItems(children)}
         </div>
       </TimelineContextProvider>
     );
@@ -109,13 +159,7 @@ const TimelineItem = React.forwardRef<HTMLDivElement, TimelineItemProps>(
         ref={ref}
         {...props}
       >
-        {React.Children.map(children, (child) => {
-          if (React.isValidElement(child)) {
-            return React.cloneElement(child, {
-              orderindex: orderIndex
-            } as TimelineHeaderProps);
-          }
-        })}
+        {renderTimelineItemChildren(children, orderIndex)}
       </div>
     );
   }
@@ -159,22 +203,17 @@ TimelineSeparator.displayName = "TimelineSeparator";
 
 export interface TimelineHeaderProps
   extends React.HTMLAttributes<HTMLDivElement> {
-  orderindex?: number;
+  orderIndex?: number;
 }
 
 const TimelineHeader = React.forwardRef<HTMLDivElement, TimelineHeaderProps>(
-  ({ className, children, orderindex, ...props }, ref) => {
+  ({ className, children, orderIndex, ...props }, ref) => {
     const { position } = useTimelineContext();
-    const placement = getTimelinePlacement(position, orderindex);
+    const placement = getTimelinePlacement(position, orderIndex);
+    const slots = getTimelineHeaderSlots(children);
 
     const renderFilteredChild = () => {
-      const filteredChild = React.Children.toArray(children).filter((child) => {
-        if (React.isValidElement(child) && child.type !== TimelineIcon) {
-          return child.props.children;
-        }
-      });
-
-      return React.Children.toArray(filteredChild).map((child, index) => {
+      return slots.content.map((child, index) => {
         const childClassName = React.isValidElement(child)
           ? (child.props as React.HTMLAttributes<HTMLElement>).className
           : undefined;
@@ -193,17 +232,8 @@ const TimelineHeader = React.forwardRef<HTMLDivElement, TimelineHeaderProps>(
     };
 
     const renderIcon = () => {
-      const iconChild = React.Children.toArray(children).find(
-        (child) => React.isValidElement(child) && child.type === TimelineIcon
-      ) as
-        | React.ReactElement<
-            unknown,
-            string | React.JSXElementConstructor<unknown>
-          >
-        | undefined;
-
-      if (iconChild) {
-        return iconChild;
+      if (slots.icon) {
+        return slots.icon;
       }
 
       return <TimelineIcon />;
@@ -249,13 +279,13 @@ TimelineTitle.displayName = "TimelineDate";
 export interface TimelineContentProps
   extends React.HTMLAttributes<HTMLDivElement>,
     VariantProps<typeof timelineVariants> {
-  orderindex?: number;
+  orderIndex?: number;
 }
 
 const TimelineContent = React.forwardRef<HTMLDivElement, TimelineContentProps>(
-  ({ className, children, orderindex, ...props }, ref) => {
+  ({ className, children, orderIndex, ...props }, ref) => {
     const { position } = useTimelineContext();
-    const placement = getTimelinePlacement(position, orderindex);
+    const placement = getTimelinePlacement(position, orderIndex);
 
     return (
       <div
