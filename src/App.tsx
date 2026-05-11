@@ -3,13 +3,15 @@ import {
   TimelineContent,
   TimelineTitle,
   TimelineHeader,
-  TimelineItem
+  TimelineItem,
+  TimelineIcon
 } from "@/components/ui/timeline";
+import { User } from "lucide-react";
 
 function App() {
   return (
     <div className='container mx-auto'>
-      <Timeline position='left'>
+      <Timeline position='default-reverse'>
         <TimelineItem>
           <TimelineHeader>
             <TimelineTitle>February 2022</TimelineTitle>
@@ -39,6 +41,9 @@ function App() {
         </TimelineItem>
         <TimelineItem>
           <TimelineHeader>
+            <TimelineIcon>
+              <User className='size-4' />
+            </TimelineIcon>
             <TimelineTitle>March 2022</TimelineTitle>
           </TimelineHeader>
           <TimelineContent>

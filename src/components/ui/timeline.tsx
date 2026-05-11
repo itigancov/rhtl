@@ -19,28 +19,68 @@ const timelineVariants = cva("flex flex-col gap-2 p-8", {
   }
 });
 
+const timelineIconColumnClass = "flex w-10 shrink-0 justify-center";
+
+function getTimelinePlacement(
+  position: NonNullable<TimelineProps["position"]>,
+  orderindex?: number
+) {
+  const isEvenIndex = orderindex !== undefined && orderindex % 2 === 0;
+  const isOddIndex = orderindex !== undefined && orderindex % 2 !== 0;
+
+  return {
+    isTextRightAligned:
+      (position === "alternate" && isEvenIndex) ||
+      (position === "alternate-reverse" && isOddIndex),
+    shouldRenderLeftEmptyDiv:
+      position === "default" ||
+      (position === "alternate" && isOddIndex) ||
+      (position === "alternate-reverse" && isEvenIndex),
+    shouldRenderLeftLine:
+      position === "left" ||
+      position === "default" ||
+      (position === "alternate" && isOddIndex) ||
+      (position === "alternate-reverse" && isEvenIndex),
+    shouldRenderRightLine:
+      position === "right" ||
+      position === "default-reverse" ||
+      (position === "alternate" && isEvenIndex) ||
+      (position === "alternate-reverse" && isOddIndex),
+    shouldRenderRightEmptyDiv:
+      position === "default-reverse" ||
+      (position === "alternate" && isEvenIndex) ||
+      (position === "alternate-reverse" && isOddIndex)
+  };
+}
+
 export interface TimelineProps
   extends React.HTMLAttributes<HTMLDivElement>,
     VariantProps<typeof timelineVariants> {}
 
 const Timeline = React.forwardRef<HTMLDivElement, TimelineProps>(
-  ({ className, position, children, ...props }, ref) => (
-    <TimelineContextProvider initialPosition={position}>
-      <div
-        ref={ref}
-        className={cn(timelineVariants({ position, className }))}
-        {...props}
-      >
-        {React.Children.map(children, (child, index) => {
-          if (React.isValidElement(child)) {
-            return React.cloneElement(child, {
-              orderIndex: index + 1
-            } as React.HTMLAttributes<HTMLElement>);
-          }
-        })}
-      </div>
-    </TimelineContextProvider>
-  )
+  ({ className, position, children, ...props }, ref) => {
+    const resolvedPosition = position ?? "default";
+
+    return (
+      <TimelineContextProvider initialPosition={resolvedPosition}>
+        <div
+          ref={ref}
+          className={cn(
+            timelineVariants({ position: resolvedPosition, className })
+          )}
+          {...props}
+        >
+          {React.Children.map(children, (child, index) => {
+            if (React.isValidElement(child)) {
+              return React.cloneElement(child, {
+                orderIndex: index + 1
+              } as React.HTMLAttributes<HTMLElement>);
+            }
+          })}
+        </div>
+      </TimelineContextProvider>
+    );
+  }
 );
 Timeline.displayName = "Timeline";
 
@@ -51,19 +91,12 @@ export interface TimelineItemProps
 
 const TimelineItem = React.forwardRef<HTMLDivElement, TimelineItemProps>(
   ({ className, orderIndex, children, ...props }, ref) => {
-    const { iconRef, isRefsInitialized, setIsRefInitialized, position } =
-      useTimelineContext();
+    const { position } = useTimelineContext();
     const isContentCentered =
       position === "default" ||
       position === "default-reverse" ||
       position === "alternate" ||
       position === "alternate-reverse";
-
-    React.useEffect(() => {
-      if (!isRefsInitialized && iconRef.current) {
-        setIsRefInitialized(true);
-      }
-    }, [setIsRefInitialized, isRefsInitialized, iconRef]);
 
     return (
       <div
@@ -93,20 +126,16 @@ const TimelineIcon = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement>
 >(({ className, children, ...props }, ref) => {
-  const { iconRef } = useTimelineContext();
-
   return children ? (
-    <div ref={ref} {...props}>
+    <div
+      className={cn(timelineIconColumnClass, "items-center", className)}
+      ref={ref}
+      {...props}
+    >
       {children}
     </div>
   ) : (
-    <div
-      className='flex items-center justify-center'
-      ref={ref}
-      style={{
-        width: iconRef.current?.offsetWidth
-      }}
-    >
+    <div className={cn(timelineIconColumnClass, "items-center")} ref={ref}>
       <div
         className={cn("size-3 rounded-full bg-slate-900", className)}
         {...props}
@@ -121,7 +150,7 @@ const TimelineSeparator = React.forwardRef<
   Omit<React.HTMLAttributes<HTMLDivElement>, "children">
 >(({ className, ...props }, ref) => {
   return (
-    <div ref={ref} className='flex gap-2' {...props}>
+    <div ref={ref} className={timelineIconColumnClass} {...props}>
       <div className={cn("mx-auto w-0.5 bg-slate-200", className)} />
     </div>
   );
@@ -135,30 +164,8 @@ export interface TimelineHeaderProps
 
 const TimelineHeader = React.forwardRef<HTMLDivElement, TimelineHeaderProps>(
   ({ className, children, orderindex, ...props }, ref) => {
-    const { position, iconRef } = useTimelineContext();
-    const isEvenIndex = orderindex && orderindex % 2 === 0;
-    const isOddIndex = orderindex && orderindex % 2 !== 0;
-    const shouldRenderLeftEmptyDiv =
-      position === "default" ||
-      (position === "alternate" && isOddIndex) ||
-      (position === "alternate-reverse" && isEvenIndex);
-    const shouldRenderLeftIcon =
-      position === "left" ||
-      position === "default" ||
-      (position === "alternate" && isOddIndex) ||
-      (position === "alternate-reverse" && isEvenIndex);
-    const shouldRenderRightIcon =
-      position === "right" ||
-      position === "default-reverse" ||
-      (position === "alternate" && isEvenIndex) ||
-      (position === "alternate-reverse" && isOddIndex);
-    const shouldRenderRightEmptyDiv =
-      position === "default-reverse" ||
-      (position === "alternate" && isEvenIndex) ||
-      (position === "alternate-reverse" && isOddIndex);
-    const isTextRightAligned =
-      (position === "alternate" && isEvenIndex) ||
-      (position === "alternate-reverse" && isOddIndex);
+    const { position } = useTimelineContext();
+    const placement = getTimelinePlacement(position, orderindex);
 
     const renderFilteredChild = () => {
       const filteredChild = React.Children.toArray(children).filter((child) => {
@@ -168,10 +175,17 @@ const TimelineHeader = React.forwardRef<HTMLDivElement, TimelineHeaderProps>(
       });
 
       return React.Children.toArray(filteredChild).map((child, index) => {
+        const childClassName = React.isValidElement(child)
+          ? (child.props as React.HTMLAttributes<HTMLElement>).className
+          : undefined;
+
         return (
           React.isValidElement(child) &&
           React.cloneElement(child, {
-            className: cn(isTextRightAligned && "text-right"),
+            className: cn(
+              childClassName,
+              placement.isTextRightAligned && "text-right"
+            ),
             key: index
           } as React.HTMLAttributes<HTMLElement>)
         );
@@ -189,13 +203,7 @@ const TimelineHeader = React.forwardRef<HTMLDivElement, TimelineHeaderProps>(
         | undefined;
 
       if (iconChild) {
-        return React.cloneElement(iconChild, {
-          ref: iconRef
-        } as React.HTMLAttributes<HTMLDivElement>);
-      }
-
-      if (orderindex === 1) {
-        return <TimelineIcon ref={iconRef} />;
+        return iconChild;
       }
 
       return <TimelineIcon />;
@@ -210,11 +218,11 @@ const TimelineHeader = React.forwardRef<HTMLDivElement, TimelineHeaderProps>(
         )}
         {...props}
       >
-        {shouldRenderLeftEmptyDiv && <div className='flex-1'></div>}
-        {shouldRenderLeftIcon && renderIcon()}
+        {placement.shouldRenderLeftEmptyDiv && <div className='flex-1'></div>}
+        {placement.shouldRenderLeftLine && renderIcon()}
         {renderFilteredChild()}
-        {shouldRenderRightIcon && renderIcon()}
-        {shouldRenderRightEmptyDiv && <div className='flex-1'></div>}
+        {placement.shouldRenderRightLine && renderIcon()}
+        {placement.shouldRenderRightEmptyDiv && <div className='flex-1'></div>}
       </div>
     );
   }
@@ -246,30 +254,8 @@ export interface TimelineContentProps
 
 const TimelineContent = React.forwardRef<HTMLDivElement, TimelineContentProps>(
   ({ className, children, orderindex, ...props }, ref) => {
-    const { iconRef, position } = useTimelineContext();
-    const isOddIndex = orderindex && orderindex % 2 === 1;
-    const isEvenIndex = orderindex && orderindex % 2 === 0;
-    const shouldRenderLeftEmptyDiv =
-      position === "default" ||
-      (position === "alternate" && isOddIndex) ||
-      (position === "alternate-reverse" && isEvenIndex);
-    const shouldRenderLeftSeparator =
-      position === "left" ||
-      position === "default" ||
-      (position === "alternate" && isOddIndex) ||
-      (position === "alternate-reverse" && isEvenIndex);
-    const shouldRenderRightSeparator =
-      position === "right" ||
-      position === "default-reverse" ||
-      (position === "alternate" && isEvenIndex) ||
-      (position === "alternate-reverse" && isOddIndex);
-    const shouldRenderRightEmptyDiv =
-      position === "default-reverse" ||
-      (position === "alternate" && isEvenIndex) ||
-      (position === "alternate-reverse" && isOddIndex);
-    const isTextRightAligned =
-      (position === "alternate" && isEvenIndex) ||
-      (position === "alternate-reverse" && isOddIndex);
+    const { position } = useTimelineContext();
+    const placement = getTimelinePlacement(position, orderindex);
 
     return (
       <div
@@ -277,25 +263,18 @@ const TimelineContent = React.forwardRef<HTMLDivElement, TimelineContentProps>(
         className={cn("flex w-full justify-center gap-2", className)}
         {...props}
       >
-        {shouldRenderLeftEmptyDiv && <div className='flex-1'></div>}
-        {shouldRenderLeftSeparator && (
-          <TimelineSeparator
-            style={{
-              width: iconRef.current?.offsetWidth
-            }}
-          />
-        )}
-        <div className={cn("flex-1 pb-2", isTextRightAligned && "text-right")}>
+        {placement.shouldRenderLeftEmptyDiv && <div className='flex-1'></div>}
+        {placement.shouldRenderLeftLine && <TimelineSeparator />}
+        <div
+          className={cn(
+            "flex-1 pb-2",
+            placement.isTextRightAligned && "text-right"
+          )}
+        >
           {children}
         </div>
-        {shouldRenderRightSeparator && (
-          <TimelineSeparator
-            style={{
-              width: iconRef.current?.offsetWidth
-            }}
-          />
-        )}
-        {shouldRenderRightEmptyDiv && <div className='flex-1'></div>}
+        {placement.shouldRenderRightLine && <TimelineSeparator />}
+        {placement.shouldRenderRightEmptyDiv && <div className='flex-1'></div>}
       </div>
     );
   }
