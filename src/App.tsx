@@ -11,7 +11,7 @@ import { User } from "lucide-react";
 function App() {
   return (
     <div className='container mx-auto'>
-      <Timeline position='default-reverse'>
+      <Timeline position='alternate'>
         <TimelineItem>
           <TimelineHeader>
             <TimelineTitle>February 2022</TimelineTitle>

@@ -1,7 +1,14 @@
-import { TimelineContextProvider, useTimelineContext } from "@/context";
 import { cn } from "@/lib/utils";
 import { cva, type VariantProps } from "class-variance-authority";
 import * as React from "react";
+
+type Position =
+  | "default"
+  | "left"
+  | "right"
+  | "default-reverse"
+  | "alternate"
+  | "alternate-reverse";
 
 const timelineVariants = cva("flex flex-col gap-2 p-8", {
   variants: {
@@ -21,9 +28,45 @@ const timelineVariants = cva("flex flex-col gap-2 p-8", {
 
 const timelineIconColumnClass = "flex w-10 shrink-0 justify-center";
 
-type TimelineOrderedChildProps = {
-  orderIndex?: number;
+type TimelineItemContextProps = {
+  orderIndex: number;
 };
+
+type TimelineLayoutSlot = "spacer" | "rail" | "content";
+type TimelineRailSide = "left" | "right";
+
+type TimelineHeaderSlots = {
+  icon?: React.ReactNode;
+  content: React.ReactNode[];
+};
+
+type TimelineContextProps = {
+  position: Position;
+};
+
+const TimelineContext = React.createContext<TimelineContextProps | undefined>(
+  undefined
+);
+
+const TimelineItemContext = React.createContext<
+  TimelineItemContextProps | undefined
+>(undefined);
+
+function useTimelineContext(): TimelineContextProps {
+  const context = React.useContext(TimelineContext);
+
+  if (!context) {
+    throw new Error(
+      "useTimelineContext must be used within a Timeline provider"
+    );
+  }
+
+  return context;
+}
+
+function useTimelineItemContext() {
+  return React.useContext(TimelineItemContext);
+}
 
 function getTimelinePlacement(
   position: NonNullable<TimelineProps["position"]>,
@@ -31,30 +74,59 @@ function getTimelinePlacement(
 ) {
   const isEvenIndex = orderIndex !== undefined && orderIndex % 2 === 0;
   const isOddIndex = orderIndex !== undefined && orderIndex % 2 !== 0;
+  const railSide = getTimelineRailSide(position, isEvenIndex, isOddIndex);
+  const isCentered =
+    position === "default" ||
+    position === "default-reverse" ||
+    position === "alternate" ||
+    position === "alternate-reverse";
 
   return {
-    isTextRightAligned:
-      (position === "alternate" && isEvenIndex) ||
-      (position === "alternate-reverse" && isOddIndex),
-    shouldRenderLeftEmptyDiv:
-      position === "default" ||
-      (position === "alternate" && isOddIndex) ||
-      (position === "alternate-reverse" && isEvenIndex),
-    shouldRenderLeftLine:
-      position === "left" ||
-      position === "default" ||
-      (position === "alternate" && isOddIndex) ||
-      (position === "alternate-reverse" && isEvenIndex),
-    shouldRenderRightLine:
-      position === "right" ||
-      position === "default-reverse" ||
-      (position === "alternate" && isEvenIndex) ||
-      (position === "alternate-reverse" && isOddIndex),
-    shouldRenderRightEmptyDiv:
-      position === "default-reverse" ||
-      (position === "alternate" && isEvenIndex) ||
-      (position === "alternate-reverse" && isOddIndex)
+    itemAlignment:
+      position === "right" ? "end" : isCentered ? "center" : "start",
+    slots: getTimelineLayoutSlots(railSide, isCentered),
+    textAlignment: railSide === "right" ? "right" : "left"
   };
+}
+
+function getTimelineRailSide(
+  position: NonNullable<TimelineProps["position"]>,
+  isEvenIndex: boolean,
+  isOddIndex: boolean
+): TimelineRailSide | undefined {
+  if (position === "left" || position === "default") {
+    return "left";
+  }
+
+  if (position === "right" || position === "default-reverse") {
+    return "right";
+  }
+
+  if (position === "alternate") {
+    return isEvenIndex ? "right" : isOddIndex ? "left" : undefined;
+  }
+
+  return isEvenIndex ? "left" : isOddIndex ? "right" : undefined;
+}
+
+function getTimelineLayoutSlots(
+  railSide: TimelineRailSide | undefined,
+  isCentered: boolean
+): TimelineLayoutSlot[] {
+  if (railSide === undefined) {
+    return ["content"];
+  }
+
+  const railAndContent: TimelineLayoutSlot[] =
+    railSide === "left" ? ["rail", "content"] : ["content", "rail"];
+
+  if (!isCentered) {
+    return railAndContent;
+  }
+
+  return railSide === "left"
+    ? ["spacer", ...railAndContent]
+    : [...railAndContent, "spacer"];
 }
 
 function isTimelineIcon(
@@ -63,50 +135,37 @@ function isTimelineIcon(
   return React.isValidElement(child) && child.type === TimelineIcon;
 }
 
-function cloneWithTimelineOrder(child: React.ReactNode, orderIndex: number) {
-  if (!React.isValidElement(child)) {
-    return child;
-  }
-
-  return React.cloneElement(
-    child as React.ReactElement<TimelineOrderedChildProps>,
-    {
-      orderIndex
-    }
-  );
-}
-
 function renderTimelineItems(children: React.ReactNode) {
-  return React.Children.map(children, (child, index) =>
-    cloneWithTimelineOrder(child, index + 1)
-  );
-}
-
-function renderTimelineItemChildren(
-  children: React.ReactNode,
-  orderIndex?: number
-) {
-  return React.Children.map(children, (child) => {
-    if (!React.isValidElement(child) || orderIndex === undefined) {
+  return React.Children.map(children, (child, index) => {
+    if (!React.isValidElement(child)) {
       return child;
     }
 
-    return cloneWithTimelineOrder(child, orderIndex);
+    return (
+      <TimelineItemContext.Provider value={{ orderIndex: index + 1 }}>
+        {child}
+      </TimelineItemContext.Provider>
+    );
   });
 }
 
 function getTimelineHeaderSlots(children: React.ReactNode) {
-  const childArray = React.Children.toArray(children);
+  return React.Children.toArray(children).reduce<TimelineHeaderSlots>(
+    (slots, child) => {
+      if (slots.icon === undefined && isTimelineIcon(child)) {
+        return {
+          ...slots,
+          icon: child
+        };
+      }
 
-  return {
-    icon: childArray.find(isTimelineIcon),
-    content: childArray.filter(
-      (child) =>
-        React.isValidElement(child) &&
-        !isTimelineIcon(child) &&
-        child.props.children
-    )
-  };
+      return {
+        ...slots,
+        content: [...slots.content, child]
+      };
+    },
+    { content: [] }
+  );
 }
 
 export interface TimelineProps
@@ -118,7 +177,7 @@ const Timeline = React.forwardRef<HTMLDivElement, TimelineProps>(
     const resolvedPosition = position ?? "default";
 
     return (
-      <TimelineContextProvider initialPosition={resolvedPosition}>
+      <TimelineContext.Provider value={{ position: resolvedPosition }}>
         <div
           ref={ref}
           className={cn(
@@ -128,7 +187,7 @@ const Timeline = React.forwardRef<HTMLDivElement, TimelineProps>(
         >
           {renderTimelineItems(children)}
         </div>
-      </TimelineContextProvider>
+      </TimelineContext.Provider>
     );
   }
 );
@@ -142,24 +201,30 @@ export interface TimelineItemProps
 const TimelineItem = React.forwardRef<HTMLDivElement, TimelineItemProps>(
   ({ className, orderIndex, children, ...props }, ref) => {
     const { position } = useTimelineContext();
-    const isContentCentered =
-      position === "default" ||
-      position === "default-reverse" ||
-      position === "alternate" ||
-      position === "alternate-reverse";
+    const itemContext = useTimelineItemContext();
+    const resolvedOrderIndex = orderIndex ?? itemContext?.orderIndex;
+    const placement = getTimelinePlacement(position, resolvedOrderIndex);
 
     return (
       <div
         className={cn(
           "relative flex min-h-16 flex-col gap-2",
-          position === "right" && "items-end",
-          isContentCentered && "items-center",
+          placement.itemAlignment === "end" && "items-end",
+          placement.itemAlignment === "center" && "items-center",
           className
         )}
         ref={ref}
         {...props}
       >
-        {renderTimelineItemChildren(children, orderIndex)}
+        {resolvedOrderIndex === undefined ? (
+          children
+        ) : (
+          <TimelineItemContext.Provider
+            value={{ orderIndex: resolvedOrderIndex }}
+          >
+            {children}
+          </TimelineItemContext.Provider>
+        )}
       </div>
     );
   }
@@ -209,25 +274,30 @@ export interface TimelineHeaderProps
 const TimelineHeader = React.forwardRef<HTMLDivElement, TimelineHeaderProps>(
   ({ className, children, orderIndex, ...props }, ref) => {
     const { position } = useTimelineContext();
-    const placement = getTimelinePlacement(position, orderIndex);
+    const itemContext = useTimelineItemContext();
+    const placement = getTimelinePlacement(
+      position,
+      orderIndex ?? itemContext?.orderIndex
+    );
     const slots = getTimelineHeaderSlots(children);
 
-    const renderFilteredChild = () => {
+    const renderHeaderContent = () => {
       return slots.content.map((child, index) => {
         const childClassName = React.isValidElement(child)
           ? (child.props as React.HTMLAttributes<HTMLElement>).className
           : undefined;
 
-        return (
-          React.isValidElement(child) &&
-          React.cloneElement(child, {
-            className: cn(
-              childClassName,
-              placement.isTextRightAligned && "text-right"
-            ),
-            key: index
-          } as React.HTMLAttributes<HTMLElement>)
-        );
+        if (!React.isValidElement(child)) {
+          return child;
+        }
+
+        return React.cloneElement(child, {
+          className: cn(
+            childClassName,
+            placement.textAlignment === "right" && "text-right"
+          ),
+          key: index
+        } as React.HTMLAttributes<HTMLElement>);
       });
     };
 
@@ -237,6 +307,17 @@ const TimelineHeader = React.forwardRef<HTMLDivElement, TimelineHeaderProps>(
       }
 
       return <TimelineIcon />;
+    };
+    const renderSlot = (slot: TimelineLayoutSlot) => {
+      if (slot === "spacer") {
+        return <div className='flex-1' />;
+      }
+
+      if (slot === "rail") {
+        return renderIcon();
+      }
+
+      return renderHeaderContent();
     };
 
     return (
@@ -248,11 +329,11 @@ const TimelineHeader = React.forwardRef<HTMLDivElement, TimelineHeaderProps>(
         )}
         {...props}
       >
-        {placement.shouldRenderLeftEmptyDiv && <div className='flex-1'></div>}
-        {placement.shouldRenderLeftLine && renderIcon()}
-        {renderFilteredChild()}
-        {placement.shouldRenderRightLine && renderIcon()}
-        {placement.shouldRenderRightEmptyDiv && <div className='flex-1'></div>}
+        {placement.slots.map((slot, index) => (
+          <React.Fragment key={`${slot}-${index}`}>
+            {renderSlot(slot)}
+          </React.Fragment>
+        ))}
       </div>
     );
   }
@@ -285,7 +366,11 @@ export interface TimelineContentProps
 const TimelineContent = React.forwardRef<HTMLDivElement, TimelineContentProps>(
   ({ className, children, orderIndex, ...props }, ref) => {
     const { position } = useTimelineContext();
-    const placement = getTimelinePlacement(position, orderIndex);
+    const itemContext = useTimelineItemContext();
+    const placement = getTimelinePlacement(
+      position,
+      orderIndex ?? itemContext?.orderIndex
+    );
 
     return (
       <div
@@ -293,18 +378,27 @@ const TimelineContent = React.forwardRef<HTMLDivElement, TimelineContentProps>(
         className={cn("flex w-full justify-center gap-2", className)}
         {...props}
       >
-        {placement.shouldRenderLeftEmptyDiv && <div className='flex-1'></div>}
-        {placement.shouldRenderLeftLine && <TimelineSeparator />}
-        <div
-          className={cn(
-            "flex-1 pb-2",
-            placement.isTextRightAligned && "text-right"
-          )}
-        >
-          {children}
-        </div>
-        {placement.shouldRenderRightLine && <TimelineSeparator />}
-        {placement.shouldRenderRightEmptyDiv && <div className='flex-1'></div>}
+        {placement.slots.map((slot, index) => {
+          if (slot === "spacer") {
+            return <div className='flex-1' key={`${slot}-${index}`} />;
+          }
+
+          if (slot === "rail") {
+            return <TimelineSeparator key={`${slot}-${index}`} />;
+          }
+
+          return (
+            <div
+              className={cn(
+                "flex-1 pb-2",
+                placement.textAlignment === "right" && "text-right"
+              )}
+              key={`${slot}-${index}`}
+            >
+              {children}
+            </div>
+          );
+        })}
       </div>
     );
   }
