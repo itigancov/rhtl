@@ -280,18 +280,13 @@ const TimelineSeparator = React.forwardRef<
 TimelineSeparator.displayName = "TimelineSeparator";
 
 export interface TimelineHeaderProps
-  extends React.HTMLAttributes<HTMLDivElement> {
-  orderIndex?: number;
-}
+  extends React.HTMLAttributes<HTMLDivElement> {}
 
 const TimelineHeader = React.forwardRef<HTMLDivElement, TimelineHeaderProps>(
-  ({ className, children, orderIndex, ...props }, ref) => {
+  ({ className, children, ...props }, ref) => {
     const { position } = useTimelineContext();
     const itemContext = useTimelineItemContext();
-    const placement = getTimelinePlacement(
-      position,
-      orderIndex ?? itemContext?.orderIndex
-    );
+    const placement = getTimelinePlacement(position, itemContext?.orderIndex);
     const slots = getTimelineHeaderSlots(children);
 
     const renderHeaderContent = () => {
@@ -375,17 +370,13 @@ TimelineTitle.displayName = "TimelineTitle";
 export interface TimelineContentProps
   extends React.HTMLAttributes<HTMLDivElement>,
     VariantProps<typeof timelineVariants> {
-  orderIndex?: number;
 }
 
 const TimelineContent = React.forwardRef<HTMLDivElement, TimelineContentProps>(
-  ({ className, children, orderIndex, ...props }, ref) => {
+  ({ className, children, ...props }, ref) => {
     const { position } = useTimelineContext();
     const itemContext = useTimelineItemContext();
-    const placement = getTimelinePlacement(
-      position,
-      orderIndex ?? itemContext?.orderIndex
-    );
+    const placement = getTimelinePlacement(position, itemContext?.orderIndex);
 
     return (
       <div
