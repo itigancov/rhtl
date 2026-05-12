@@ -2,6 +2,8 @@
 
 Timeline is an early, source-owned React Timeline primitive for Tailwind projects. It is built for shadcn-style copy/paste usage: copy the component into your app, keep the source code, and customize it with normal JSX and Tailwind classes.
 
+This is an independent shadcn-style component. It is not affiliated with or maintained by shadcn/ui.
+
 Timeline is useful for chronological pages, roadmaps, process steps, milestone lists, activity histories, and editorial timelines. It is not a data renderer or full timeline application.
 
 ## Installation
