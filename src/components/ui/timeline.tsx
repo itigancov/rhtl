@@ -184,6 +184,7 @@ const Timeline = React.forwardRef<HTMLDivElement, TimelineProps>(
             timelineVariants({ position: resolvedPosition, className })
           )}
           {...props}
+          data-slot='timeline'
         >
           {renderTimelineItems(children)}
         </div>
@@ -215,6 +216,7 @@ const TimelineItem = React.forwardRef<HTMLDivElement, TimelineItemProps>(
         )}
         ref={ref}
         {...props}
+        data-slot='timeline-item'
       >
         {resolvedOrderIndex === undefined ? (
           children
@@ -240,14 +242,20 @@ const TimelineIcon = React.forwardRef<
       className={cn(timelineIconColumnClass, "items-center", className)}
       ref={ref}
       {...props}
+      data-slot='timeline-icon'
     >
       {children}
     </div>
   ) : (
-    <div className={cn(timelineIconColumnClass, "items-center")} ref={ref}>
+    <div
+      className={cn(timelineIconColumnClass, "items-center")}
+      ref={ref}
+      data-slot='timeline-icon'
+    >
       <div
         className={cn("size-3 rounded-full bg-slate-900", className)}
         {...props}
+        data-slot='timeline-default-icon-dot'
       />
     </div>
   );
@@ -259,7 +267,12 @@ const TimelineSeparator = React.forwardRef<
   Omit<React.HTMLAttributes<HTMLDivElement>, "children">
 >(({ className, ...props }, ref) => {
   return (
-    <div ref={ref} className={timelineIconColumnClass} {...props}>
+    <div
+      ref={ref}
+      className={timelineIconColumnClass}
+      {...props}
+      data-slot='timeline-separator'
+    >
       <div className={cn("mx-auto w-0.5 bg-slate-200", className)} />
     </div>
   );
@@ -328,6 +341,7 @@ const TimelineHeader = React.forwardRef<HTMLDivElement, TimelineHeaderProps>(
           className
         )}
         {...props}
+        data-slot='timeline-header'
       >
         {placement.slots.map((slot, index) => (
           <React.Fragment key={`${slot}-${index}`}>
@@ -352,10 +366,11 @@ const TimelineTitle = React.forwardRef<
       )}
       ref={ref}
       {...props}
+      data-slot='timeline-title'
     />
   );
 });
-TimelineTitle.displayName = "TimelineDate";
+TimelineTitle.displayName = "TimelineTitle";
 
 export interface TimelineContentProps
   extends React.HTMLAttributes<HTMLDivElement>,
@@ -377,6 +392,7 @@ const TimelineContent = React.forwardRef<HTMLDivElement, TimelineContentProps>(
         ref={ref}
         className={cn("flex w-full justify-center gap-2", className)}
         {...props}
+        data-slot='timeline-content'
       >
         {placement.slots.map((slot, index) => {
           if (slot === "spacer") {
@@ -394,6 +410,7 @@ const TimelineContent = React.forwardRef<HTMLDivElement, TimelineContentProps>(
                 placement.textAlignment === "right" && "text-right"
               )}
               key={`${slot}-${index}`}
+              data-slot='timeline-content-inner'
             >
               {children}
             </div>

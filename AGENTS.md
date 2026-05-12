@@ -119,6 +119,8 @@ Treat public component APIs, exported names, rendered semantics, documented comp
 
 Public API is what consumers import, configure, compose, and are told they can rely on.
 
+`data-slot` names are a light styling, debugging, and testing contract once they are documented or covered by tests. Do not rename them casually.
+
 Public API does not include:
 
 - Internal helper functions.
@@ -172,7 +174,13 @@ Do not add npm publishing infrastructure opportunistically.
 
 Prefer copy/paste-first distribution inspired by shadcn/ui. The component should be readable, self-contained enough to own locally, and easy to adapt after installation.
 
+Preserve single-file copy/paste ergonomics for the distributed component. Do not extract internal helpers into separate runtime files only for test convenience.
+
+Tests may live separately in this repository, but they should exercise the same public component exports users copy. Do not add testing-only exports or split runtime files unless that also improves the copy/paste user experience.
+
 If registry-style distribution is introduced, keep it aligned with the same source-owned model: users should receive real component code, not a black-box runtime dependency.
+
+Do not introduce a split-source plus generated-single-file pipeline prematurely. The source of truth is currently the same single component file users copy. Revisit generated distribution only if the component becomes large enough that single-file source hurts maintainability, or if a registry/build pipeline becomes necessary for other reasons.
 
 When publishing work is explicitly requested, make it package-quality:
 
@@ -226,4 +234,5 @@ These decisions are intentionally not finalized yet:
 - Exact test setup and coverage thresholds.
 - Whether npm packaging is worth pursuing after copy/paste usage is proven.
 - Final registry/copy-paste distribution workflow.
+- Whether a future split-source plus generated-single-file pipeline is justified.
 - Whether future semantic requirements justify polymorphic rendering or `asChild`.
