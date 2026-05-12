@@ -26,7 +26,7 @@ const timelineVariants = cva("flex flex-col gap-2 p-8", {
   }
 });
 
-const timelineIconColumnClass = "flex w-10 shrink-0 justify-center";
+const timelineMarkerColumnClass = "flex w-10 shrink-0 justify-center";
 
 type TimelineItemContextProps = {
   orderIndex: number;
@@ -36,7 +36,7 @@ type TimelineLayoutSlot = "spacer" | "rail" | "content";
 type TimelineRailSide = "left" | "right";
 
 type TimelineHeaderSlots = {
-  icon?: React.ReactNode;
+  marker?: React.ReactNode;
   content: React.ReactNode[];
 };
 
@@ -129,10 +129,10 @@ function getTimelineLayoutSlots(
     : [...railAndContent, "spacer"];
 }
 
-function isTimelineIcon(
+function isTimelineMarker(
   child: React.ReactNode
 ): child is React.ReactElement<React.HTMLAttributes<HTMLDivElement>> {
-  return React.isValidElement(child) && child.type === TimelineIcon;
+  return React.isValidElement(child) && child.type === TimelineMarker;
 }
 
 function renderTimelineItems(children: React.ReactNode) {
@@ -152,10 +152,10 @@ function renderTimelineItems(children: React.ReactNode) {
 function getTimelineHeaderSlots(children: React.ReactNode) {
   return React.Children.toArray(children).reduce<TimelineHeaderSlots>(
     (slots, child) => {
-      if (slots.icon === undefined && isTimelineIcon(child)) {
+      if (slots.marker === undefined && isTimelineMarker(child)) {
         return {
           ...slots,
-          icon: child
+          marker: child
         };
       }
 
@@ -233,34 +233,34 @@ const TimelineItem = React.forwardRef<HTMLDivElement, TimelineItemProps>(
 );
 TimelineItem.displayName = "TimelineItem";
 
-const TimelineIcon = React.forwardRef<
+const TimelineMarker = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement>
 >(({ className, children, ...props }, ref) => {
   return children ? (
     <div
-      className={cn(timelineIconColumnClass, "items-center", className)}
+      className={cn(timelineMarkerColumnClass, "items-center", className)}
       ref={ref}
       {...props}
-      data-slot='timeline-icon'
+      data-slot='timeline-marker'
     >
       {children}
     </div>
   ) : (
     <div
-      className={cn(timelineIconColumnClass, "items-center")}
+      className={cn(timelineMarkerColumnClass, "items-center")}
       ref={ref}
-      data-slot='timeline-icon'
+      data-slot='timeline-marker'
     >
       <div
         className={cn("size-3 rounded-full bg-slate-900", className)}
         {...props}
-        data-slot='timeline-default-icon-dot'
+        data-slot='timeline-default-marker-dot'
       />
     </div>
   );
 });
-TimelineIcon.displayName = "TimelineIcon";
+TimelineMarker.displayName = "TimelineMarker";
 
 const TimelineSeparator = React.forwardRef<
   HTMLDivElement,
@@ -269,7 +269,7 @@ const TimelineSeparator = React.forwardRef<
   return (
     <div
       ref={ref}
-      className={timelineIconColumnClass}
+      className={timelineMarkerColumnClass}
       {...props}
       data-slot='timeline-separator'
     >
@@ -309,12 +309,12 @@ const TimelineHeader = React.forwardRef<HTMLDivElement, TimelineHeaderProps>(
       });
     };
 
-    const renderIcon = () => {
-      if (slots.icon) {
-        return slots.icon;
+    const renderMarker = () => {
+      if (slots.marker) {
+        return slots.marker;
       }
 
-      return <TimelineIcon />;
+      return <TimelineMarker />;
     };
     const renderSlot = (slot: TimelineLayoutSlot) => {
       if (slot === "spacer") {
@@ -322,7 +322,7 @@ const TimelineHeader = React.forwardRef<HTMLDivElement, TimelineHeaderProps>(
       }
 
       if (slot === "rail") {
-        return renderIcon();
+        return renderMarker();
       }
 
       return renderHeaderContent();
@@ -417,8 +417,8 @@ export {
   Timeline,
   TimelineContent,
   TimelineHeader,
-  TimelineIcon,
   TimelineItem,
+  TimelineMarker,
   TimelineSeparator,
   TimelineTitle
 };

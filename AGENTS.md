@@ -71,7 +71,7 @@ The preferred API is component composition:
 <Timeline>
   <TimelineItem>
     <TimelineHeader>
-      <TimelineIcon />
+      <TimelineMarker />
       <TimelineTitle>2026</TimelineTitle>
     </TimelineHeader>
     <TimelineContent>Project created</TimelineContent>
@@ -101,7 +101,7 @@ Runtime dependencies should stay styling/utilities-only unless there is a concre
 
 Do not add headless behavior libraries, state machines, animation libraries, date/data helpers, or icon libraries by default.
 
-Icons are consumer-provided children. Demo-only icon dependencies, such as `lucide-react`, must not leak into the published runtime surface.
+Marker visuals are consumer-provided children. Demo-only icon dependencies, such as `lucide-react`, must not leak into the published runtime surface.
 
 ## Accessibility
 

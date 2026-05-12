@@ -4,7 +4,7 @@ import {
   TimelineTitle,
   TimelineHeader,
   TimelineItem,
-  TimelineIcon
+  TimelineMarker
 } from "@/components/ui/timeline";
 import { User } from "lucide-react";
 
@@ -41,9 +41,9 @@ function App() {
         </TimelineItem>
         <TimelineItem>
           <TimelineHeader>
-            <TimelineIcon>
+            <TimelineMarker>
               <User className='size-4' />
-            </TimelineIcon>
+            </TimelineMarker>
             <TimelineTitle>March 2022</TimelineTitle>
           </TimelineHeader>
           <TimelineContent>

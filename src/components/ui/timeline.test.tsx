@@ -6,8 +6,8 @@ import {
   Timeline,
   TimelineContent,
   TimelineHeader,
-  TimelineIcon,
   TimelineItem,
+  TimelineMarker,
   TimelineSeparator,
   TimelineTitle
 } from "./timeline";
@@ -59,7 +59,7 @@ describe("Timeline", () => {
     expect(getSlot(container, "timeline-content-inner")).toBeInTheDocument();
   });
 
-  it("renders the default icon dot when no custom icon is provided", () => {
+  it("renders the default marker dot when no custom marker is provided", () => {
     const { container } = render(
       <Timeline>
         <TimelineItem>
@@ -70,18 +70,20 @@ describe("Timeline", () => {
       </Timeline>
     );
 
-    expect(getAllSlots(container, "timeline-icon")).toHaveLength(1);
-    expect(getAllSlots(container, "timeline-default-icon-dot")).toHaveLength(1);
+    expect(getAllSlots(container, "timeline-marker")).toHaveLength(1);
+    expect(getAllSlots(container, "timeline-default-marker-dot")).toHaveLength(
+      1
+    );
   });
 
-  it("renders a custom icon without the default icon dot", () => {
+  it("uses a direct custom marker without the default marker dot", () => {
     const { container } = render(
       <Timeline>
         <TimelineItem>
           <TimelineHeader>
-            <TimelineIcon>
+            <TimelineMarker>
               <span>Custom marker</span>
-            </TimelineIcon>
+            </TimelineMarker>
             <TimelineTitle>Done</TimelineTitle>
           </TimelineHeader>
         </TimelineItem>
@@ -89,8 +91,37 @@ describe("Timeline", () => {
     );
 
     expect(screen.getByText("Custom marker")).toBeInTheDocument();
-    expect(getAllSlots(container, "timeline-icon")).toHaveLength(1);
-    expect(getAllSlots(container, "timeline-default-icon-dot")).toHaveLength(0);
+    expect(getAllSlots(container, "timeline-marker")).toHaveLength(1);
+    expect(getAllSlots(container, "timeline-default-marker-dot")).toHaveLength(
+      0
+    );
+  });
+
+  it("treats a wrapped marker as header content", () => {
+    function WrappedMarker() {
+      return (
+        <TimelineMarker>
+          <span>Wrapped marker</span>
+        </TimelineMarker>
+      );
+    }
+
+    const { container } = render(
+      <Timeline>
+        <TimelineItem>
+          <TimelineHeader>
+            <WrappedMarker />
+            <TimelineTitle>Wrapped marker title</TimelineTitle>
+          </TimelineHeader>
+        </TimelineItem>
+      </Timeline>
+    );
+
+    expect(screen.getByText("Wrapped marker")).toBeInTheDocument();
+    expect(getAllSlots(container, "timeline-marker")).toHaveLength(2);
+    expect(getAllSlots(container, "timeline-default-marker-dot")).toHaveLength(
+      1
+    );
   });
 
   it("right-aligns title and content for right positioning", () => {
@@ -192,9 +223,9 @@ describe("Timeline", () => {
       <Timeline className='root-class' data-example='timeline'>
         <TimelineItem className='item-class' data-example='item'>
           <TimelineHeader className='header-class' data-example='header'>
-            <TimelineIcon className='icon-class' data-example='icon'>
+            <TimelineMarker className='marker-class' data-example='marker'>
               <span>Marker</span>
-            </TimelineIcon>
+            </TimelineMarker>
             <TimelineTitle className='title-class' data-example='title'>
               Pass through title
             </TimelineTitle>
@@ -225,10 +256,10 @@ describe("Timeline", () => {
       "data-example",
       "header"
     );
-    expect(getSlot(container, "timeline-icon")).toHaveClass("icon-class");
-    expect(getSlot(container, "timeline-icon")).toHaveAttribute(
+    expect(getSlot(container, "timeline-marker")).toHaveClass("marker-class");
+    expect(getSlot(container, "timeline-marker")).toHaveAttribute(
       "data-example",
-      "icon"
+      "marker"
     );
     expect(getSlot(container, "timeline-title")).toHaveClass("title-class");
     expect(getSlot(container, "timeline-title")).toHaveAttribute(
