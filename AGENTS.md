@@ -2,7 +2,7 @@
 
 ## Project Purpose
 
-This repository is currently named `rhtl`, originally meaning "React Headless Timeline Library." Until the public name and positioning are intentionally finalized, describe the project as a shadcn-style React Timeline primitive/component.
+This project is named Timeline. Describe it as a shadcn-style React Timeline primitive/component for Tailwind projects.
 
 The project exists to provide a high-quality, Radix UI/shadcn/ui-inspired Timeline component for React. Its primary distribution model is source-owned copy/paste usage: users should be able to bring the component into their app, understand it, customize it, and keep full control of the code.
 
@@ -10,7 +10,7 @@ Npm packaging is optional and later. Keep the code clean enough to package if re
 
 The first product is a Timeline primitive: a composable component for chronological, milestone, process, roadmap, activity, and editorial timeline layouts. It should not become a full timeline application, data renderer, animation system, or design system.
 
-When this project uses the term "headless" internally, it means schema-free and composition-first. It does not mean unstyled.
+Use "composition-first" or "schema-free" when describing the API shape. Do not use older project naming or generic library positioning for public release work.
 
 ## Product Values
 
@@ -99,9 +99,9 @@ Colors, spacing, icon size, and typography should usually remain class overrides
 
 Runtime dependencies should stay styling/utilities-only unless there is a concrete behavioral requirement that cannot be solved cleanly in local code.
 
-Do not add headless behavior libraries, state machines, animation libraries, date/data helpers, or icon libraries by default.
+Do not add behavior libraries, state machines, animation libraries, date/data helpers, or icon libraries by default.
 
-Marker visuals are consumer-provided children. Demo-only icon dependencies, such as `lucide-react`, must not leak into the published runtime surface.
+Marker visuals are consumer-provided children. Demo-only icon dependencies must not leak into the published runtime surface.
 
 ## Accessibility
 
@@ -194,7 +194,7 @@ When publishing work is explicitly requested, make it package-quality:
 - Versioning strategy.
 - Verification commands.
 
-If npm packaging becomes a real goal later, revisit package boundaries, peer dependencies, exports, semver, and whether a headless core is worth extracting.
+If npm packaging becomes a real goal later, revisit package boundaries, peer dependencies, exports, semver, and whether a separate core is worth extracting.
 
 ## Documentation
 
@@ -230,7 +230,6 @@ Current expected verification:
 These decisions are intentionally not finalized yet:
 
 - Public package name.
-- Whether to keep `rhtl` as a public name or only as a repo codename.
 - Exact test setup and coverage thresholds.
 - Whether npm packaging is worth pursuing after copy/paste usage is proven.
 - Final registry/copy-paste distribution workflow.
