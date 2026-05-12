@@ -250,11 +250,11 @@ const TimelineMarker = React.forwardRef<
     <div
       className={cn(timelineMarkerColumnClass, "items-center")}
       ref={ref}
+      {...props}
       data-slot='timeline-marker'
     >
       <div
         className={cn("size-3 rounded-full bg-slate-900", className)}
-        {...props}
         data-slot='timeline-default-marker-dot'
       />
     </div>
@@ -273,7 +273,10 @@ const TimelineSeparator = React.forwardRef<
       {...props}
       data-slot='timeline-separator'
     >
-      <div className={cn("mx-auto w-0.5 bg-slate-200", className)} />
+      <div
+        className={cn("mx-auto w-0.5 bg-slate-200", className)}
+        data-slot='timeline-separator-line'
+      />
     </div>
   );
 });

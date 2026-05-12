@@ -63,6 +63,7 @@ describe("Timeline", () => {
     expect(getSlot(container, "timeline-title")).toBeInTheDocument();
     expect(getSlot(container, "timeline-content")).toBeInTheDocument();
     expect(getSlot(container, "timeline-content-inner")).toBeInTheDocument();
+    expect(getSlot(container, "timeline-separator-line")).toBeInTheDocument();
   });
 
   it("renders the default marker dot when no custom marker is provided", () => {
@@ -100,6 +101,33 @@ describe("Timeline", () => {
     expect(getAllSlots(container, "timeline-marker")).toHaveLength(1);
     expect(getAllSlots(container, "timeline-default-marker-dot")).toHaveLength(
       0
+    );
+  });
+
+  it("uses className to style the default marker dot", () => {
+    const { container } = render(
+      <Timeline>
+        <TimelineItem>
+          <TimelineHeader>
+            <TimelineMarker
+              className='default-marker-class'
+              data-example='default-marker'
+            />
+            <TimelineTitle>Default marker title</TimelineTitle>
+          </TimelineHeader>
+        </TimelineItem>
+      </Timeline>
+    );
+
+    expect(getSlot(container, "timeline-marker")).toHaveAttribute(
+      "data-example",
+      "default-marker"
+    );
+    expect(getSlot(container, "timeline-marker")).not.toHaveClass(
+      "default-marker-class"
+    );
+    expect(getSlot(container, "timeline-default-marker-dot")).toHaveClass(
+      "default-marker-class"
     );
   });
 
@@ -336,8 +364,11 @@ describe("Timeline", () => {
       "data-example",
       "separator"
     );
+    expect(getAllSlots(container, "timeline-separator")[1]).not.toHaveClass(
+      "separator-class"
+    );
     expect(
-      getAllSlots(container, "timeline-separator")[1].firstElementChild
+      getAllSlots(container, "timeline-separator-line")[1]
     ).toHaveClass("separator-class");
   });
 
