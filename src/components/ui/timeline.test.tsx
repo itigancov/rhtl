@@ -36,6 +36,12 @@ function getContentInnerByText(container: HTMLElement, text: string) {
   return element as HTMLElement;
 }
 
+function getDirectChildSlots(element: HTMLElement) {
+  return Array.from(element.children).map((child) =>
+    child.getAttribute("data-slot")
+  );
+}
+
 describe("Timeline", () => {
   it("renders consumer composition with stable slot anchors", () => {
     const { container } = render(
@@ -142,6 +148,27 @@ describe("Timeline", () => {
     );
   });
 
+  it("places content before rail for right positioning", () => {
+    const { container } = render(
+      <Timeline position='right'>
+        <TimelineItem>
+          <TimelineHeader>
+            <TimelineTitle>Right title</TimelineTitle>
+          </TimelineHeader>
+          <TimelineContent>Right content</TimelineContent>
+        </TimelineItem>
+      </Timeline>
+    );
+
+    expect(getDirectChildSlots(getSlot(container, "timeline-header"))).toEqual([
+      "timeline-title",
+      "timeline-marker"
+    ]);
+    expect(getDirectChildSlots(getSlot(container, "timeline-content"))).toEqual(
+      ["timeline-content-inner", "timeline-separator"]
+    );
+  });
+
   it("alternates item alignment from left to right", () => {
     const { container } = render(
       <Timeline position='alternate'>
@@ -168,6 +195,38 @@ describe("Timeline", () => {
     expect(getContentInnerByText(container, "Second content")).toHaveClass(
       "text-right"
     );
+  });
+
+  it("alternates rail and content order", () => {
+    const { container } = render(
+      <Timeline position='alternate'>
+        <TimelineItem>
+          <TimelineHeader>
+            <TimelineTitle>First title</TimelineTitle>
+          </TimelineHeader>
+          <TimelineContent>First content</TimelineContent>
+        </TimelineItem>
+        <TimelineItem>
+          <TimelineHeader>
+            <TimelineTitle>Second title</TimelineTitle>
+          </TimelineHeader>
+          <TimelineContent>Second content</TimelineContent>
+        </TimelineItem>
+      </Timeline>
+    );
+
+    const contents = getAllSlots(container, "timeline-content");
+
+    expect(getDirectChildSlots(contents[0])).toEqual([
+      null,
+      "timeline-separator",
+      "timeline-content-inner"
+    ]);
+    expect(getDirectChildSlots(contents[1])).toEqual([
+      "timeline-content-inner",
+      "timeline-separator",
+      null
+    ]);
   });
 
   it("alternates item alignment from right to left when reversed", () => {
