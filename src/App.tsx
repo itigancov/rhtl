@@ -6,7 +6,7 @@ import {
   TimelineMarker,
   TimelineTitle
 } from "@/components/ui/timeline";
-import { Analytics } from "@vercel/analytics/next";
+import { Analytics } from "@vercel/analytics/react";
 import type React from "react";
 
 function App() {
